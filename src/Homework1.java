@@ -4,14 +4,16 @@ public class Homework1 {
     
     static Stack charholder = new Stack();
     public static Node temp;
-
+    
     public static void main(String[] args) {
         String RPN;
-        if(args.length <= 0){
+        if(args.length > 0){
+            RPN = args[0];
+        }
+        else{
             RPN = "251-*32*+";
         }
-        else
-            RPN = args[0];
+        
         //String RPN = args[0];
         
         for(int i = 0; i < RPN.length(); i++){
