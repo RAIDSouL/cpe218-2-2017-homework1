@@ -1,4 +1,15 @@
+import java.awt.Dimension;
+import java.awt.GridLayout;
+import java.io.IOException;
+import java.net.URL;
+import javax.swing.*;
 import java.util.Stack;
+import javax.swing.event.TreeSelectionEvent;
+import javax.swing.event.TreeSelectionListener;
+import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.DefaultTreeCellRenderer;
+import javax.swing.tree.TreeSelectionModel;
+
 
 public class Homework1 {
     
@@ -26,18 +37,8 @@ public class Homework1 {
         inorder(temp);
         System.out.print('=');
         System.out.print(calculate(temp));
-    }
-    
-    public static class Node{
-        public Node left;
-        public Node right;
-        char data;
-        int value;
-        public Node (char n){
-            data = n;
-            left = null;
-            right = null;
-        }
+        
+         javax.swing.SwingUtilities.invokeLater(TreeDemo::createAndShowGUI);
     }
     
     public static void infix(Node n){
@@ -90,4 +91,181 @@ public class Homework1 {
     public static boolean Isoperation(Node n){
         return n.data == '+' || n.data == '-' || n.data == '*' || n.data == '/';
     }
+}
+    
+class TreeDemo extends JPanel implements TreeSelectionListener {
+    private JEditorPane htmlPane;
+    private JTree tree;
+    private URL helpURL;
+    private static boolean DEBUG = false;
+ 
+    //Optionally play with line styles.  Possible values are
+    //"Angled" (the default), "Horizontal", and "None".
+    private static boolean playWithLineStyle = false;
+    private static String lineStyle = "Horizontal";
+     
+    //Optionally set the look and feel.
+    private static boolean useSystemLookAndFeel = false;
+ 
+    public TreeDemo() {
+        super(new GridLayout(1,0));
+ 
+        //Create the nodes.
+        DefaultMutableTreeNode top = new DefaultMutableTreeNode(Homework1.temp.data);
+        createNodes(top,Homework1.temp);
+ 
+        //Create a tree that allows one selection at a time.
+        tree = new JTree(top);
+        tree.getSelectionModel().setSelectionMode
+                (TreeSelectionModel.SINGLE_TREE_SELECTION);
+        
+        //Listen for when the selection changes.
+        tree.addTreeSelectionListener(this);
+ 
+        if (playWithLineStyle) {
+            System.out.println("line style = " + lineStyle);
+            tree.putClientProperty("JTree.lineStyle", lineStyle);
+        }
+ 
+        //Create the scroll pane and add the tree to it. 
+        JScrollPane treeView = new JScrollPane(tree);
+ 
+        //Create the HTML viewing pane.
+        htmlPane = new JEditorPane();
+        htmlPane.setEditable(false);
+        initHelp();
+        JScrollPane htmlView = new JScrollPane(htmlPane);
+ 
+        //Add the scroll panes to a split pane.
+        JSplitPane splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
+        splitPane.setTopComponent(treeView);
+        splitPane.setBottomComponent(htmlView);
+ 
+        Dimension minimumSize = new Dimension(100, 50);
+        htmlView.setMinimumSize(minimumSize);
+        treeView.setMinimumSize(minimumSize);
+        splitPane.setDividerLocation(100); 
+        splitPane.setPreferredSize(new Dimension(500, 300));
+ 
+        //Set the icon for leaf nodes.
+        ImageIcon leafIcon = createImageIcon("middle.gif");
+        if (leafIcon != null) {
+            DefaultTreeCellRenderer renderer = new DefaultTreeCellRenderer();
+            renderer.setClosedIcon(leafIcon);
+            renderer.setOpenIcon(leafIcon);
+            tree.setCellRenderer(renderer);
+        }
+        
+        //Add the split pane to this panel.
+        add(splitPane);
+    }
+ 
+    /** Required by TreeSelectionListener interface. */
+    @Override
+    public void valueChanged(TreeSelectionEvent e) {
+        DefaultMutableTreeNode node = (DefaultMutableTreeNode)
+        tree.getLastSelectedPathComponent();
+ 
+        if (node == null) return;
+ 
+        Object nodeInfo = node.getUserObject();
+        Node temp = (Node)nodeInfo;
+        Homework1.inorder(temp);
+        htmlPane.setText(Integer.toString(temp.value));
+    }
+ 
+    private class BookInfo {
+        public String bookName;
+        public URL bookURL;
+ 
+        public BookInfo(String book, String filename) {
+            bookName = book;
+            bookURL = getClass().getResource(filename);
+            if (bookURL == null) {
+                System.err.println("Couldn't find file: "+ filename);
+            }
+        }
+ 
+        public String toString() {
+            return bookName;
+        }
+    }
+ 
+    private void initHelp() {
+        String s = "TreeDemoHelp.html";
+        helpURL = getClass().getResource(s);
+        if (helpURL == null) {
+            System.err.println("Couldn't open help file: " + s);
+        } else if (DEBUG) {
+            System.out.println("Help URL is " + helpURL);
+        }
+ 
+        displayURL(helpURL);
+    }
+ 
+    private void displayURL(URL url) {
+        try {
+            if (url != null) {
+                htmlPane.setPage(url);
+            } else { //null url
+        htmlPane.setText("File Not Found");
+                if (DEBUG) {
+                    System.out.println("Attempted to display a null URL.");
+                }
+            }
+        } catch (IOException e) {
+            System.err.println("Attempted to read a bad URL: " + url);
+        }
+    }
+ 
+    private void createNodes(DefaultMutableTreeNode top,Node tree) {
+        if(tree.left != null){
+                 DefaultMutableTreeNode LNode = new DefaultMutableTreeNode(tree.left.data);
+                 top.add(LNode);
+                 createNodes(LNode,tree.left);
+             }
+             if(tree.right != null){
+                 DefaultMutableTreeNode RNode = new DefaultMutableTreeNode(tree.right.data);
+                 top.add(RNode);
+                 createNodes(RNode,tree.right);
+             }
+    }
+         
+    /**
+     * Create the GUI and show it.  For thread safety,
+     * this method should be invoked from the
+     * event dispatch thread.
+     */
+    public static void createAndShowGUI() {
+        if (useSystemLookAndFeel) {
+            try {
+                UIManager.setLookAndFeel(
+                    UIManager.getSystemLookAndFeelClassName());
+            } catch (Exception e) {
+                System.err.println("Couldn't use system look and feel.");
+            }
+        }
+ 
+        //Create and set up the window.
+        JFrame frame = new JFrame("TreeDemo");
+        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+ 
+        //Add content to the window.
+        frame.add(new TreeDemo());
+ 
+        //Display the window.
+        frame.pack();
+        frame.setVisible(true);
+    }
+    
+    protected static ImageIcon createImageIcon(String path) {
+        java.net.URL imgURL = TreeDemo.class.getResource(path);
+        if (imgURL != null) {
+            return new ImageIcon(imgURL);
+        } else {
+            System.err.println("Couldn't find file: " + path);
+            return null;
+        }
+    }
+    
 }
